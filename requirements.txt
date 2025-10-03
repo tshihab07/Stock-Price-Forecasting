@@ -1,0 +1,23 @@
+# Core data manipulation and numerical computing
+pandas>=1.5.0
+numpy>=1.21.0
+
+# Visualization
+matplotlib>=3.5.0
+seaborn>=0.12.0
+
+# Machine Learning (xgboost ecosystem)
+xgboost>=1.7.0
+
+# Neural Networks (TensorFlow/Keras)
+tensorflow>=2.12.0
+
+
+# Hyperparameter Optimization
+optuna>=3.0.0
+
+# Model Interpretability
+shap>=0.42.0
+
+# Persistence
+joblib>=1.2.0
