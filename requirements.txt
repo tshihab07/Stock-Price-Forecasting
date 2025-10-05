@@ -1,23 +1,27 @@
-# Core data manipulation and numerical computing
-pandas>=1.5.0
-numpy>=1.21.0
+# Core Python libraries
+numpy==1.26.4
+pandas==2.3.2
+yfinance==0.2.66
+matplotlib==3.10.6
+seaborn==0.13.2
+joblib==1.5.2
 
-# Visualization
-matplotlib>=3.5.0
-seaborn>=0.12.0
+# Scikit-learn utilities
+scikit-learn==1.7.2
+scikeras==0.13.0
 
-# Machine Learning (xgboost ecosystem)
-xgboost>=1.7.0
+# Machine Learning & Optimization
+xgboost==3.0.5
+optuna==4.5.0
 
-# Neural Networks (TensorFlow/Keras)
-tensorflow>=2.12.0
+# ARIMA models for time series forecasting
+pmdarima==2.0.3
+statsmodels==0.14.5
+Cython==3.1.4
 
+# Deep Learning with TensorFlow
+tensorflow==2.20.0
+keras==3.11.3
 
-# Hyperparameter Optimization
-optuna>=3.0.0
-
-# Model Interpretability
-shap>=0.42.0
-
-# Persistence
-joblib>=1.2.0
+# Building web apps with Streamlit
+streamlit==1.50.0
