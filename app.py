@@ -1,73 +1,194 @@
-import streamlit as st
-import joblib
 import numpy as np
+import pandas as pd
+import yfinance as yf
+from keras.models import load_model
+import streamlit as st
+import matplotlib.pyplot as plt
 from pathlib import Path
+from sklearn.preprocessing import MinMaxScaler
+
+
+import numpy as np
+import pandas as pd
+import yfinance as yf
 from tensorflow.keras.models import load_model
+from sklearn.preprocessing import MinMaxScaler
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("Agg")  # Important for headless environments (like Hugging Face)
+from PIL import Image
+import io
+import os
+import traceback
+import streamlit as st
+import tempfile
 
 
-MODEL_DIR = Path("artifacts/models")  
+# Streamlit Configuration
+st.set_page_config(
+    page_title="Stock Price Predictor",
+    page_icon="📈",
+    layout="wide",
+)
 
-# --- Load the Model and Scaler ---
-@st.cache_resource
-def load_model_and_scaler():
+st.markdown(
     """
-    Loads the LSTM model (.h5) and its associated scaler (.pkl).
+    <h1 style='text-align: center; color: #FF4B4B; margin-top: -45px;'>
+        📈 LSTM Stock Price Predictor
+    </h1>
     """
-    
-    model_path = MODEL_DIR / "LSTM.h5"
-    model = load_model(model_path)
-    
-    scaler_path = MODEL_DIR / "LSTM_scaler.pkl"
-    scaler = joblib.load(scaler_path)
-    
-    return model, scaler
+    "Enter a stock ticker symbol (e.g., <code>AAPL</code>, <code>GOOG</code>, <code>TSLA</code>)",
+    unsafe_allow_html=True
+)
 
-# Load the model and scaler
-try:
-    model, scaler = load_model_and_scaler()
-    st.success("Model and scaler loaded successfully!")
-except Exception as e:
-    st.error(f"Failed to load model or scaler: {e}")
+# Load Pre-trained Model
+MODEL_PATH  = 'artifacts\models\model_LSTM.keras'
+if not os.path.exists(MODEL_PATH):
+    st.error(f"Model file not found: {MODEL_PATH}.")
     st.stop()
 
-# --- App UI ---
-st.title("Stock Price Forecaster")
-st.write("This app uses a trained LSTM model to predict the next day's closing price.")
+try:
+    model = load_model(MODEL_PATH)
 
-# --- User Input / Data Source ---
-st.subheader("Provide the last 10 closing prices (in USD)")
+except Exception as e:
+    st.error(f"Failed to load model: {str(e)}")
+    st.stop()
 
-# Create 10 input boxes for the user
-prices = []
-for i in range(10, 0, -1):
-    days_ago = i
-    default_price = 190.0 + (10 - i) * 0.5
-    price = st.number_input(
-        f"Price from {days_ago} day(s) ago", 
-        min_value=0.01, 
-        value=float(default_price), 
-        key=f"price_{i}"
-    )
-    prices.append(price)
+# Helper Functions
+def fig_to_image(fig):
+    """ Convert Matplotlib figure to RGB image array. """
+    
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", dpi=100)
+    buf.seek(0)
+    plt.close(fig)
+    img = Image.open(buf).convert("RGB")
+    return img
 
-if st.button("Predict Next Day's Closing Price"):
+
+def predict_stock(stock_symbol: str):
+    """ Run the LSTM stock prediction. """
+    
     try:
-        input_array = np.array(prices).reshape(-1, 1)
-        
-        scaled_input = scaler.transform(input_array)
-        
-        scaled_input = scaled_input.reshape(1, -1, 1)
-        
-        # --- Make Prediction ---
-        scaled_prediction = model.predict(scaled_input, verbose=0)
-        
-        # --- Inverse transform to get the actual price ---
-        prediction = scaler.inverse_transform(scaled_prediction).flatten()[0]
-        
-        # --- Display Result ---
-        st.success(f"**Predicted Closing Price:** ${prediction:.2f}")
-        st.balloons()
-        
+        stock_symbol = stock_symbol.strip().upper()
+        if not stock_symbol:
+            return None, None, None, None, None, "Please enter a valid stock symbol (e.g., AAPL, GOOG)."
+
+        start, end = "2012-01-01", "2024-12-31"
+        data = yf.download(stock_symbol, start=start, end=end)
+
+        if data.empty or "Close" not in data.columns:
+            return None, None, None, None, None, f"No valid data found for symbol: {stock_symbol}. Try AAPL, MSFT, or GOOG."
+
+        # Split data
+        split_index = int(len(data) * 0.8)
+        data_train = pd.DataFrame(data["Close"][:split_index])
+        data_test = pd.DataFrame(data["Close"][split_index:])
+
+        # Scaling
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        past_100_days = data_train.tail(100)
+        data_test = pd.concat([past_100_days, data_test], ignore_index=True)
+        data_test_scaled = scaler.fit_transform(data_test)
+
+        x, y = [], []
+        for i in range(100, len(data_test_scaled)):
+            x.append(data_test_scaled[i - 100:i])
+            y.append(data_test_scaled[i, 0])
+        x, y = np.array(x), np.array(y)
+
+        if x.size == 0:
+            return None, None, None, None, None, "Not enough data to make predictions."
+
+        predictions = model.predict(x, verbose=0)
+        scale_factor = 1 / scaler.scale_[0]
+        predictions = predictions * scale_factor
+        y = y * scale_factor
+
+        # ======== PLOTS ========
+        # Price vs MA50
+        ma_50 = data["Close"].rolling(window=50).mean()
+        fig1 = plt.figure(figsize=(10, 6))
+        plt.plot(ma_50, "r", label="MA50")
+        plt.plot(data["Close"], "g", label="Close Price")
+        plt.title(f"{stock_symbol} - Price vs MA50")
+        plt.legend()
+        img1 = fig_to_image(fig1)
+
+        # MA50 vs MA100
+        ma_100 = data["Close"].rolling(window=100).mean()
+        fig2 = plt.figure(figsize=(10, 6))
+        plt.plot(ma_50, "r", label="MA50")
+        plt.plot(ma_100, "b", label="MA100")
+        plt.plot(data["Close"], "g", label="Close Price")
+        plt.title(f"{stock_symbol} - Price vs MA50 vs MA100")
+        plt.legend()
+        img2 = fig_to_image(fig2)
+
+        # MA100 vs MA200
+        ma_200 = data["Close"].rolling(window=200).mean()
+        fig3 = plt.figure(figsize=(10, 6))
+        plt.plot(ma_100, "r", label="MA100")
+        plt.plot(ma_200, "b", label="MA200")
+        plt.plot(data["Close"], "g", label="Close Price")
+        plt.title(f"{stock_symbol} - Price vs MA100 vs MA200")
+        plt.legend()
+        img3 = fig_to_image(fig3)
+
+        # Original vs Predicted
+        fig4 = plt.figure(figsize=(10, 6))
+        plt.plot(predictions, "r", label="Predicted Price")
+        plt.plot(y, "g", label="Original Price")
+        plt.title(f"{stock_symbol} - Original vs Predicted Price")
+        plt.xlabel("Time")
+        plt.ylabel("Price")
+        plt.legend()
+        img4 = fig_to_image(fig4)
+
+        # ======== CSV ========
+        pred_df = pd.DataFrame(
+            {"Original_Price": y.flatten(), "Predicted_Price": predictions.flatten()}
+        )
+
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+        pred_df.to_csv(temp_file.name, index=False)
+
+        return img1, img2, img3, img4, temp_file.name, "✅ Prediction completed successfully!"
+
     except Exception as e:
-        st.error(f"An error occurred during prediction: {e}")
-        st.exception(e)
+        error_details = f"Error: {str(e)}\n\nFull traceback:\n{traceback.format_exc()}"
+        print(error_details)
+        return None, None, None, None, None, error_details
+
+
+# Streamlit UI
+with st.form("predict_form"):
+    stock_symbol = st.text_input("Stock Symbol", value="GOOG", placeholder="e.g., AAPL, TSLA")
+    submitted = st.form_submit_button("Predict")
+
+if submitted:
+    with st.spinner("Fetching data and predicting..."):
+        img1, img2, img3, img4, csv_path, status_msg = predict_stock(stock_symbol)
+
+    st.text_area("Status", status_msg, height=100)
+
+    if "✅" in status_msg:
+        col1, col2 = st.columns(2)
+        col3, col4 = st.columns(2)
+
+        with col1:
+            st.image(img1, caption="Price vs MA50")
+        with col2:
+            st.image(img2, caption="Price vs MA50 vs MA100")
+        with col3:
+            st.image(img3, caption="Price vs MA100 vs MA200")
+        with col4:
+            st.image(img4, caption="Original vs Predicted Price")
+
+        with open(csv_path, "rb") as f:
+            st.download_button(
+                label="📥 Download Original vs Predicted Price in CSV Format",
+                data=f,
+                file_name="stock_predictions.csv",
+                mime="text/csv"
+            )
