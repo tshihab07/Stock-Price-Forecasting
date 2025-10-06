@@ -34,7 +34,7 @@ st.set_page_config(
 st.markdown(
     """
     <h1 style='text-align: center; color: #FF4B4B; margin-top: -45px;'>
-        📈 LSTM Stock Price Predictor
+        📈 Stock Price Predictor
     </h1>
     """
     "Enter a stock ticker symbol (e.g., <code>AAPL</code>, <code>GOOG</code>, <code>TSLA</code>)",
