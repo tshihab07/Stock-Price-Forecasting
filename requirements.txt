@@ -17,7 +17,6 @@ optuna==4.5.0
 
 # ARIMA models for time series forecasting
 statsmodels==0.14.5
-pmdarima==2.0.3
 
 # Deep Learning with TensorFlow
 tensorflow==2.16.1
