@@ -34,7 +34,7 @@ st.markdown(
 )
 
 # Load Pre-trained Model
-MODEL_PATH  = 'artifacts\models\model_LSTM.keras'
+MODEL_PATH = os.path.join("artifacts", "models", "model_LSTM.keras")
 if not os.path.exists(MODEL_PATH):
     st.error(f"Model file not found: {MODEL_PATH}.")
     st.stop()
