@@ -1,22 +1,14 @@
 import numpy as np
 import pandas as pd
-import yfinance as yf
-from keras.models import load_model
-import streamlit as st
-import matplotlib.pyplot as plt
-from pathlib import Path
-from sklearn.preprocessing import MinMaxScaler
-
-
-import numpy as np
-import pandas as pd
-import yfinance as yf
-from tensorflow.keras.models import load_model
-from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use("Agg")  # Important for headless environments (like Hugging Face)
+matplotlib.use("Agg")
+import yfinance as yf
+
+from tensorflow.keras.models import load_model
+from sklearn.preprocessing import MinMaxScaler
 from PIL import Image
+
 import io
 import os
 import traceback
