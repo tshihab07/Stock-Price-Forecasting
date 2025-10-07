@@ -1,26 +1,26 @@
 # Core Python libraries
-numpy==1.26.4
-pandas==2.3.2
-yfinance==0.2.66
-matplotlib==3.10.6
-seaborn==0.13.2
-joblib==1.5.2
+numpy>=1.26.4
+pandas>=2.3.2
+yfinance>=0.2.66
+matplotlib>=3.10.6
+seaborn>=0.13.2
+joblib>=1.5.2
 
 # Scikit-learn utilities
-scikit-learn==1.7.2
-scikeras==0.13.0
+scikit-learn>=1.7.2
+scikeras>=0.13.0
 
 # Machine Learning & Optimization
-xgboost==3.0.5
-optuna==4.5.0
+xgboost>=3.0.5
+optuna>=4.5.0
 
 # ARIMA models for time series forecasting
-pmdarima==2.0.3
-statsmodels==0.14.5
-Cython==3.1.4
+pmdarima>=2.0.3
+statsmodels>=0.14.5
+Cython>=3.1.4
 
 # Deep Learning with TensorFlow (compatible with numpy<2.0)
-tensorflow==2.20.0
+tensorflow>=2.20.0
 
 # Building web apps with Streamlit
-streamlit==1.50.0
+streamlit>=1.50.0
