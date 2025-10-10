@@ -80,34 +80,3 @@ class Evaluator:
         print(f"--- Performance Comparison: Train vs Test ({model_name}) ---")
         
         return perf.round(3)
-
-
-# Handles saving trained models and performance results to organized directories
-class ModelPersister:
-    
-    # Save model artifacts to disk that supports both sklearn models and LSTM (Keras)
-    @staticmethod
-    def save_model(model, model_name, model_dir="../artifacts/models"):
-        path = Path(model_dir)
-        path.mkdir(parents=True, exist_ok=True)
-        
-        if model_name == "LSTM":
-            model.save(path / "model_LSTM.keras")
-            print(f"✅ Model saved: {path}/{model_name}.keras")
-        
-        else:
-            joblib.dump(model, path / f"{model_name}.pkl")
-            print(f"✅ Model saved: {path}/{model_name}.pkl or .keras")
-        
-    
-    # Save model performance results as CSV
-    @staticmethod
-    def save_results(data, filename, results_dir="../artifacts/model-performance"):
-        path = Path(results_dir)
-        path.mkdir(parents=True, exist_ok=True)
-        if isinstance(data, pd.DataFrame):
-            data.to_csv(path / filename, index=False)
-        
-        else:
-            pd.DataFrame([data]).to_csv(path / filename, index=False)
-        print(f"✅ Results saved: {path}/{filename}")
