@@ -13,12 +13,11 @@ class StockDataProcessor:
     
     # Split dataset based on time ratio
     @staticmethod
-    def time_based_split(df, train_ratio=0.8, val_ratio=0.1):
+    def time_based_split(df, train_ratio=0.8):
         n = len(df)
         train_end = int(n * train_ratio)
-        val_end = int(n * (train_ratio + val_ratio))
         
-        return df.iloc[:train_end], df.iloc[train_end:val_end], df.iloc[val_end:]
+        return df.iloc[:train_end], df.iloc[train_end:]
     
 
     # Create lagged features for time-series modeling
