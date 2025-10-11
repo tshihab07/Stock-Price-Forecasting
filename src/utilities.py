@@ -49,7 +49,7 @@ class Evaluator:
     
     # Compute regression evaluation metrics includes MSE, MAE, RMSE, R², and MAPE
     @staticmethod
-    def calculate_metrics(actual, pred, prefix=""):
+    def calculate_metrics(actual, pred):
         if len(actual) == 0 or len(pred) == 0:
             raise ValueError("Empty input for metrics calculation.")
         
@@ -58,14 +58,14 @@ class Evaluator:
         rmse = np.sqrt(mse)
         r2 = r2_score(actual, pred)
         
-        mape = np.mean(np.abs((actual - pred) / (actual + 1e-8))) * 100  # avoid div by zero
+        mape = np.mean(np.abs((actual - pred) / (actual + 1e-8))) * 100
         
         return {
-            f"{prefix}MSE": mse,
-            f"{prefix}MAE": mae,
-            f"{prefix}RMSE": rmse,
-            f"{prefix}R2": r2,
-            f"{prefix}MAPE": mape
+            f"MSE": mse,
+            f"MAE": mae,
+            f"RMSE": rmse,
+            f"R2": r2,
+            f"MAPE": mape
         }
     
 
@@ -80,3 +80,71 @@ class Evaluator:
         print(f"--- Performance Comparison: Train vs Test ({model_name}) ---")
         
         return perf.round(3)
+
+
+# Handles saving trained models and performance results to organized directories
+class ModelPersister:
+    
+    def __init__(self, model_name, artifacts_root="../artifacts"):
+        self.model_name = model_name
+        self.artifacts_root = Path(artifacts_root)
+        self.model_dir = self.artifacts_root / "models"
+        self.performance_dir = self.artifacts_root / "model-performance"
+        
+        # Create directories
+        self.model_dir.mkdir(parents=True, exist_ok=True)
+        self.performance_dir.mkdir(parents=True, exist_ok=True)
+    
+
+    # Save the trained model in appropriate format
+    def save_model(self, model):
+        if self.model_name.lower() == "lstm":
+            model.save(self.model_dir / "model_LSTM.keras")
+        
+        else:
+            joblib.dump(model, self.model_dir / f"model_{self.model_name.title()}.pkl")
+        
+        print(f"Model saved: {self.model_dir}/{self.model_name.lower()}.pkl")
+    
+
+    # Save full train/test/CV metrics for this model only
+    def save_performance(self, performance_df):
+        filename = f"{self.model_name.lower()}Performance.csv"
+        path = self.performance_dir / filename
+        performance_df.to_csv(path, index=False)
+        print(f"{self.model_name} performance saved: {path}")
+    
+
+    # Append this model's summary metrics to the shared performance file
+    def aggregated_performance(self, summary_dict):
+        path = self.performance_dir / "a_ModelPerformance.csv"
+        
+        # Add model name to the record
+        record = {"Model": self.model_name, **summary_dict}
+        df = pd.DataFrame([record]).round(3)
+        
+        # Append or create
+        if path.exists():
+            df.to_csv(path, mode='a', header=False, index=False)
+        
+        else:
+            df.to_csv(path, index=False)
+        
+        print(f"Appended to aggregated performance: {path}")
+    
+
+    # Append this model's overfitting metrics to the shared overfitting file
+    def append_overfitting(self, overfit_dict):
+        path = self.performance_dir / "a_overfittingAnalysis.csv"
+        
+        # Add model name
+        record = {"Model": self.model_name, **overfit_dict}
+        df = pd.DataFrame([record]).round(3)
+        
+        if path.exists():
+            df.to_csv(path, mode='a', header=False, index=False)
+        
+        else:
+            df.to_csv(path, index=False)
+        
+        print(f"Appended to overfitting analysis: {path}")
