@@ -60,20 +60,15 @@ class Evaluator:
         
         mape = np.mean(np.abs((actual - pred) / (actual + 1e-8))) * 100
         
-        return {
-            f"MSE": mse,
-            f"MAE": mae,
-            f"RMSE": rmse,
-            f"R2": r2,
-            f"MAPE": mape
-        }
+        return [mse, mae, rmse, r2, mape]
     
 
     # Print and return a comparison table showing Train vs Test performance metrics
     @staticmethod
     def print_evaluation_tables(model_name, train_metrics, test_metrics):
         perf = pd.DataFrame({
-            'Train': train_metrics,
+            'Metric' : ['MSE', 'MAE', 'RMSE', 'R2 Score', 'MAPE'],
+            'Training': train_metrics,
             'Test': test_metrics
         })
         
@@ -116,16 +111,15 @@ class ModelPersister:
     
 
     # Append this model's summary metrics to the shared performance file
-    def aggregated_performance(self, summary_dict):
+    def aggregated_performance(self, df):
         path = self.performance_dir / "a_ModelPerformance.csv"
         
-        # Add model name to the record
-        record = {"Model": self.model_name, **summary_dict}
-        df = pd.DataFrame([record]).round(3)
         
         # Append or create
         if path.exists():
-            df.to_csv(path, mode='a', header=False, index=False)
+            model_perf = pd.read_csv(path)                          # open previous loaded data
+            df = pd.concat([model_perf, df], ignore_index=True)     # append new data
+            df.to_csv(path, index=False)
         
         else:
             df.to_csv(path, index=False)
@@ -134,15 +128,13 @@ class ModelPersister:
     
 
     # Append this model's overfitting metrics to the shared overfitting file
-    def append_overfitting(self, overfit_dict):
+    def append_overfitting(self, df):
         path = self.performance_dir / "a_overfittingAnalysis.csv"
         
-        # Add model name
-        record = {"Model": self.model_name, **overfit_dict}
-        df = pd.DataFrame([record]).round(3)
-        
         if path.exists():
-            df.to_csv(path, mode='a', header=False, index=False)
+            overfit_df = pd.read_csv(path)                          # open previous loaded data
+            df = pd.concat([overfit_df, df], ignore_index=True)     # append new data
+            df.to_csv(path, index=False)
         
         else:
             df.to_csv(path, index=False)
