@@ -114,7 +114,6 @@ class ModelPersister:
     def aggregated_performance(self, df):
         path = self.performance_dir / "a_ModelPerformance.csv"
         
-        
         # Append or create
         if path.exists():
             model_perf = pd.read_csv(path)                          # open previous loaded data
